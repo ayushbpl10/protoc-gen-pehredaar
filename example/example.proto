@@ -76,10 +76,7 @@ service Users {
         };
     };
     rpc UpdateUser(UpdateUserReq) returns (.google.protobuf.Empty){
-        option (rights.validator) = {
-            resource: "/users/{email_ids.emails}/cards.read/"
-            resource: "/users/{id}/cards/user.write"
-        };
+
     }
 
 }

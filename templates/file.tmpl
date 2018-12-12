@@ -62,6 +62,8 @@ import "{{ .}}"
     {{ range $rpc := $service.Rpcs }}
         func (s *Rights{{$service.ServiceName}}Server) {{$rpc.RpcName}}(ctx context.Context, rightsvar *{{ $rpc.PackageName }}.{{$rpc.Input}}) ({{if eq $rpc.Output "Empty"}}*empty.{{$rpc.Output}}{{else}}*{{ $rpc.PackageName }}.{{$rpc.Output}}{{end}}, error) {
 
+            {{ if eq $rpc.Missing false}}
+
             ResourcePathOR := make([]string,0)
             ResourcePathAND := make([]string,0)
 
@@ -138,6 +140,9 @@ import "{{ .}}"
             if !res.IsValid {
                 return nil, status.Errorf(codes.PermissionDenied, res.Reason)
             }
+
+            {{end}}
+
             return s.{{$service.ServiceName}}Server.{{.RpcName}}(ctx, rightsvar)
         }
 

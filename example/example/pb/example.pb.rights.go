@@ -8,7 +8,7 @@ import "google.golang.org/grpc/codes"
 import "google.golang.org/grpc/status"
 import "go.uber.org/fx"
 import "go.appointy.com/google/pb/rights"
-import "github.com/ayushbpl10/protoc-gen-rights/example/rights"
+import right "github.com/ayushbpl10/protoc-gen-rights/example/rights"
 
 import "github.com/golang/protobuf/ptypes/empty"
 
@@ -20,13 +20,9 @@ const UsersResourcePaths = [...]string{
 
 	"/users/{id}/cards/user.write",
 
-	"/users/{user_id}/cards/{tent_id.tent}/ex.write",
-
 	"/{user_email.email}/users/{user_id}/cards/{tent_id.tent}/email/{user_email.email.checks.check.check_id.val_id}",
 
-	"/users/{email_ids.emails}/cards.read/",
-
-	"/users/{id}/cards/user.write",
+	"/users/{user_id}/cards/{tent_id.tent}/ex.write",
 }
 
 type RightsUsersServer struct {
@@ -95,6 +91,7 @@ func (s *RightsUsersServer) AddUser(ctx context.Context, rightsvar *pb.User) (*e
 	if !res.IsValid {
 		return nil, status.Errorf(codes.PermissionDenied, res.Reason)
 	}
+
 	return s.UsersServer.AddUser(ctx, rightsvar)
 }
 
@@ -154,50 +151,11 @@ func (s *RightsUsersServer) GetUser(ctx context.Context, rightsvar *pb.GetUserRe
 	if !res.IsValid {
 		return nil, status.Errorf(codes.PermissionDenied, res.Reason)
 	}
+
 	return s.UsersServer.GetUser(ctx, rightsvar)
 }
 
 func (s *RightsUsersServer) UpdateUser(ctx context.Context, rightsvar *pb.UpdateUserReq) (*empty.Empty, error) {
 
-	ResourcePathOR := make([]string, 0)
-	ResourcePathAND := make([]string, 0)
-
-	for _, EmailIds := range rightsvar.GetEmailIds() {
-
-		for _, Emails := range EmailIds.GetEmails() {
-
-			ResourcePathAND = append(ResourcePathAND,
-
-				fmt.Sprintf("/users/%s/cards.read/",
-
-					Emails,
-				),
-			)
-
-		}
-
-	}
-
-	ResourcePathOR = append(ResourcePath,
-
-		fmt.Sprintf("/users/%s/cards/user.write",
-
-			rightsvar.GetId(),
-		),
-	)
-
-	res, err := s.rightsCli.IsValid(ctx, &rights.IsValidReq{
-		ResourcePathOR:  ResourcePath,
-		ResourcePathAND: ResourcePathAND,
-		UserId:          s.user.UserID(ctx),
-		ModuleName:      "Users",
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if !res.IsValid {
-		return nil, status.Errorf(codes.PermissionDenied, res.Reason)
-	}
 	return s.UsersServer.UpdateUser(ctx, rightsvar)
 }

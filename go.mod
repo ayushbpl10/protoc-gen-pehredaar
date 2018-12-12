@@ -5,6 +5,7 @@ require (
 	github.com/golang/protobuf v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.5.1 // indirect
 	github.com/lyft/protoc-gen-star v0.4.2
+	github.com/magefile/mage v1.8.0 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
