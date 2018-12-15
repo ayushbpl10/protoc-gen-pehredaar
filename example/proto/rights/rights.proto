@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package rights;
+
+option go_package = "pb/rights";
+//1:read --> Get, List
+//2:write --> Add , Update
+//3:manage
+//4:admin --> delete
+/*
+    Rights service is used to store and verify user rights
+    Rights are granted against each resource/entity/aggragate of the system. Resource Paths are matched using the Glob Pattern.
+    Example:
+    {
+        user_id: "5dd2bd8a-92ed-4b19-a6c6-df12699817e4",
+        allowed: [
+            { resource: "/programs/3ddb58f0-639e-414a-b7a5-fa4241b46178/locations/ab2853ca-cc4d-4454-9001-2af0b00775c7/", [6, 7, 8] },
+            { resource: "/programs/", [4] },
+        ],
+        not_allowed: [
+            { resource: "/programs/3ddb58f0-639e-414a-b7a5-fa4241b46178/locations/ab2853ca-cc4d-4454-9001-2af0b00775c7/", [4, 3, 2] }
+        ]
+    }
+
+    By default all rights are rejected for the User. Rights are explicitly granted and within the set of rights that were granted rights can be explicitly revoked.
+*/
+service Rights {
+    rpc AddRight(AddRightReq) returns (UserRight){
+    }
+    // GetRights can be used to get rights of a specific user.
+    rpc GetRight(GetRightReq) returns (UserRight) {
+    }
+}
+
+service RightValidators {
+    rpc IsValid (IsValidReq) returns (IsValidRes) {}
+}
+
+message AddRightReq {
+    string user_id = 2;
+}
+
+message UserRight {
+    string user_id = 1;
+    repeated Right allowed = 2;
+    repeated Right not_allowed = 3;
+}
+
+message Right {
+    string resource = 1;
+    repeated int32 values = 2;
+    string module = 3;
+}
+
+message GetRightReq {
+    string user_id = 1;
+}
+
+message IsValidRes{
+    bool is_valid = 1;
+    string reason = 2;
+}
+
+message IsValidReq {
+    string user_id = 1;
+    repeated string resource_path_or = 2;
+    repeated string resource_path_and = 3;
+    string module_name = 4;
+}

@@ -3,14 +3,20 @@
 
 package rightsval
 
-import "fmt"
-import "context"
-import "google.golang.org/grpc/codes"
-import "google.golang.org/grpc/status"
-import "go.uber.org/fx"
-import "go.appointy.com/google/pb/rights"
-import "go.appointy.com/google/userinfo"
-import "github.com/ayushbpl10/protoc-gen-rights/example/rights"
+import (
+	"context"
+
+	"fmt"
+
+	"go.uber.org/fx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+    "github.com/golang/protobuf/ptypes/empty"
+
+	user "../../users"
+
+	rights "../rights"
+)
 
 
 
@@ -36,7 +42,7 @@ import "{{ .}}"
     type Rights{{$service.ServiceName}}Server struct {
         {{ .PackageName }}.{{$service.ServiceName}}Server
         rightsCli rights.RightValidatorsClient
-        user right.UserIDer
+        user      user.UserIDer
     }
 
     func init() {
@@ -45,7 +51,7 @@ import "{{ .}}"
 
     type Rights{{$service.ServiceName}}ClientResult struct {
         fx.Out
-        {{$service.ServiceName}}Client {{ .PackageName }}.AcceptancesClient `name:"r"`
+        {{$service.ServiceName}}Client {{ .PackageName }}.{{$service.ServiceName}}Client `name:"r"`
     }
 
     func NewRights{{$service.ServiceName}}Client(c rights.RightValidatorsClient, s {{ .PackageName }}.{{$service.ServiceName}}Server) Rights{{$service.ServiceName}}ClientResult {
@@ -127,8 +133,8 @@ import "{{ .}}"
             )
 
             res, err := s.rightsCli.IsValid(ctx, &rights.IsValidReq{
-                ResourcePathOR  :  ResourcePath,
-                ResourcePathAND :  ResourcePathAND,
+                ResourcePathOr  :  ResourcePathOR,
+                ResourcePathAnd :  ResourcePathAND,
                 UserId          :  s.user.UserID(ctx),
                 ModuleName      :  "{{$service.ServiceName}}",
             })

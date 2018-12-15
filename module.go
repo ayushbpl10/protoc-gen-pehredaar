@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	rightspb "github.com/ayushbpl10/protoc-gen-rights/rights"
+	"github.com/ayushbpl10/protoc-gen-rights/example/pb/rightsval"
 	"github.com/golang/protobuf/proto"
 	pgs "github.com/lyft/protoc-gen-star"
 	pgsgo "github.com/lyft/protoc-gen-star/lang/go"
@@ -49,7 +49,7 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 
 				missing := false
 				opt := rpc.Descriptor().GetOptions()
-				option, err := proto.GetExtension(opt, rightspb.E_Validator)
+				option, err := proto.GetExtension(opt, rightsval.E_Validator)
 				if err != nil {
 					if err == proto.ErrMissingExtension {
 						missing = true
@@ -57,7 +57,7 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 						panic(err)
 					}
 				}
-				right := rightspb.MyRights{}
+				right := rightsval.MyRights{}
 
 				rpcModel := rpcModel{RpcName: rpc.Name().UpperCamelCase().String(), Input: rpc.Input().Name().UpperCamelCase().String(), Output: rpc.Output().Name().UpperCamelCase().String(), Option: right, PackageName: m.Context.PackageName(f).String(), Missing: missing}
 
@@ -337,7 +337,7 @@ type rpcModel struct {
 	RpcName     string
 	Input       string
 	Output      string
-	Option      rightspb.MyRights
+	Option      rightsval.MyRights
 	Resources   []Resource
 }
 
