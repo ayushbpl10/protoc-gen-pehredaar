@@ -1,9 +1,10 @@
-module github.com/ayushbpl10/protoc-gen-rights
+module github.com/ayushbpl10/protoc-gen-pehreddar
 
 require (
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gobuffalo/packr v1.21.3
 	github.com/golang/protobuf v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.5.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.6.4 // indirect
 	github.com/lyft/protoc-gen-star v0.4.2
 	github.com/magefile/mage v1.8.0 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect

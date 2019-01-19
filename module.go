@@ -17,7 +17,7 @@ type rightsGen struct {
 }
 
 func (*rightsGen) Name() string {
-	return "rights"
+	return "pehredaar"
 }
 
 func (m *rightsGen) InitContext(c pgs.BuildContext) {
@@ -27,10 +27,11 @@ func (m *rightsGen) InitContext(c pgs.BuildContext) {
 
 func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs.Package) []pgs.Artifact {
 
-	modulePath := "github.com/ayushbpl10/protoc-gen-rights/example/"
+	modulePath := ""
 
 	for _, f := range targets {
 
+		modulePath = m.Context.OutputPath(f).BaseName()
 		name := m.Context.OutputPath(f).SetExt(".rights.go").String()
 		fm := fileModel{PackageName: m.Context.PackageName(f).String()}
 		for _, im := range f.Imports() {

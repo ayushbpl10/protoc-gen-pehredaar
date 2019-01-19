@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 
+	right "github.com/ayushbpl10/protoc-gen-rights/example/rights"
 	"github.com/golang/protobuf/ptypes/empty"
 	"go.uber.org/fx"
 	"google.golang.org/grpc/codes"
@@ -14,10 +15,9 @@ import (
 
 	user "../../users"
 
-	"../rights"
-	"github.com/ayushbpl10/protoc-gen-rights/example/pb/example"
-
-	right "github.com/ayushbpl10/protoc-gen-rights/example/rights"
+	rights "../rights"
+	"github.com/golang/protobuf/ptypes/empty"
+	"pb/example/example.pb.gopb/example"
 )
 
 const UsersResourcePaths = [...]string{
@@ -26,9 +26,9 @@ const UsersResourcePaths = [...]string{
 
 	"/users/{id}/cards/user.write",
 
-	"/{user_email.email}/users/{user_id}/cards/{tent_id.tent}/email/{user_email.email.checks.check.check_id.val_id}",
-
 	"/users/{user_id}/cards/{tent_id.tent}/ex.write",
+
+	"/{user_email.email}/users/{user_id}/cards/{tent_id.tent}/email/{user_email.email.checks.check.check_id.val_id}",
 }
 
 type RightsUsersServer struct {
@@ -138,9 +138,9 @@ func (s *RightsUsersServer) GetUser(ctx context.Context, rightsvar *example.GetU
 
 		fmt.Sprintf("/users/%s/cards/%s/ex.write",
 
-			rightsvar.GetUserId(),
-
 			rightsvar.GetTentId().GetTent(),
+
+			rightsvar.GetUserId(),
 		),
 	)
 
