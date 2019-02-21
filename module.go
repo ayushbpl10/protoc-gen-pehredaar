@@ -2,14 +2,28 @@ package main
 
 import (
 	"encoding/json"
+
+	"github.com/ayushbpl10/protoc-gen-pehredaar/src/pehredaar"
+
 	"regexp"
 	"strings"
 
-	"github.com/ayushbpl10/protoc-gen-rights/example/pb/rightsval"
 	"github.com/golang/protobuf/proto"
 	pgs "github.com/lyft/protoc-gen-star"
 	pgsgo "github.com/lyft/protoc-gen-star/lang/go"
 )
+
+var IMPORTS = []string{
+	"context",
+	"fmt",
+	"go.uber.org/fx",
+	"google.golang.org/grpc/codes",
+	"google.golang.org/grpc/status",
+	"github.com/golang/protobuf/ptypes/empty",
+	"github.com/ayushbpl10/protoc-gen-pehredaar/src/rights",
+	"github.com/ayushbpl10/protoc-gen-pehredaar/src/pehredaar",
+	"github.com/ayushbpl10/protoc-gen-pehredaar/src/user",
+}
 
 type rightsGen struct {
 	pgs.ModuleBase
@@ -17,7 +31,7 @@ type rightsGen struct {
 }
 
 func (*rightsGen) Name() string {
-	return "pehredaar"
+	return "src"
 }
 
 func (m *rightsGen) InitContext(c pgs.BuildContext) {
@@ -34,8 +48,21 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 		modulePath = m.Context.OutputPath(f).BaseName()
 		name := m.Context.OutputPath(f).SetExt(".rights.go").String()
 		fm := fileModel{PackageName: m.Context.PackageName(f).String()}
+
+		for _, i := range IMPORTS {
+			fm.Imports = append(fm.Imports, i)
+		}
+
 		for _, im := range f.Imports() {
-			fm.Imports = append(fm.Imports, im.Descriptor().Options.GetGoPackage())
+			found := false
+			for _, i := range IMPORTS {
+				if i == im.Descriptor().Options.GetGoPackage() {
+					found = true
+				}
+			}
+			if !found {
+				fm.Imports = append(fm.Imports, im.Descriptor().Options.GetGoPackage())
+			}
 		}
 
 		fm.Imports = append(fm.Imports, modulePath+f.Descriptor().Options.GetGoPackage())
@@ -50,7 +77,7 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 
 				missing := false
 				opt := rpc.Descriptor().GetOptions()
-				option, err := proto.GetExtension(opt, rightsval.E_Validator)
+				option, err := proto.GetExtension(opt, pehredaar.E_Paths)
 				if err != nil {
 					if err == proto.ErrMissingExtension {
 						missing = true
@@ -58,9 +85,9 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 						panic(err)
 					}
 				}
-				right := rightsval.MyRights{}
+				right := pehredaar.MyRights{}
 
-				rpcModel := rpcModel{RpcName: rpc.Name().UpperCamelCase().String(), Input: rpc.Input().Name().UpperCamelCase().String(), Output: rpc.Output().Name().UpperCamelCase().String(), Option: right, PackageName: m.Context.PackageName(f).String(), Missing: missing}
+				rpcModel := rpcModel{RPCName: rpc.Name().UpperCamelCase().String(), Input: rpc.Input().Name().UpperCamelCase().String(), Output: rpc.Output().Name().UpperCamelCase().String(), Option: right, PackageName: m.Context.PackageName(f).String(), Missing: missing}
 
 				if !missing {
 					byteData, err := json.Marshal(option)
@@ -197,7 +224,7 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 											if Level >= 0 {
 												ForLoopMapWithOutGet[fr] = toCamelInitCase(r, true)
 											}
-											Level += 1
+											Level++
 										}
 
 										forLoop := ForLoop{}
@@ -335,10 +362,10 @@ func (m *rightsGen) Execute(targets map[string]pgs.File, packages map[string]pgs
 type rpcModel struct {
 	Missing     bool
 	PackageName string
-	RpcName     string
+	RPCName     string
 	Input       string
 	Output      string
-	Option      rightsval.MyRights
+	Option      pehredaar.MyRights
 	Resources   []Resource
 }
 

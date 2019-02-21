@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package rightsval;
+package pehredaar;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package="pb/rightsval";
+option go_package="pehredaar";
 
 extend google.protobuf.MethodOptions {
-    MyRights validator = 9955;
+    MyRights paths = 9955;
 }
 
 message MyRights {

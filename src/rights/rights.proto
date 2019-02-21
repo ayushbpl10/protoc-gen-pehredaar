@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package rights;
 
-option go_package = "pb/rights";
+option go_package = "rights";
 //1:read --> Get, List
 //2:write --> Add , Update
 //3:manage
