@@ -308,8 +308,6 @@ option (pehredaar.module_roles).module_role = {
 
 protoc-gen-pehredaar uses the options provided in the rpc to identify which input message property is dynamic and needs to be considered while glob pattern matching from input.
 
-A sample proto can be referenced [here](https://gitlab.com/saastack/tools/protoc-gen-pehredaar/blob/master/src/sample/sample.proto)
-
 
 # Installing
 
