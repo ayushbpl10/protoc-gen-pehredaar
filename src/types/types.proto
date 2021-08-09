@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package appointy.types;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/chaku.proto";
+
+// typespb for pb generation
+option go_package = "go.saastack.io/protos/types";
+
+option (chaku.descriptors) = true;
+
+// Generic Price object
+message Price {
+    option (chaku.to_flat) = true;
+
+    uint64 amount = 1;
+    string currency = 2;
+}
+
+// Generic Gallery Item Object
+message GalleryItem {
+    option (chaku.to_flat) = true;
+
+    string thumb_image = 1;
+    string large_image = 2;
+}
+
+// Generic Timeslot object
+message Timeslot {
+    option (chaku.to_flat) = true;
+
+    google.protobuf.Timestamp startTime = 1;
+    google.protobuf.Timestamp endTime = 2;
+}
+
+// Generic Dateslot object
+message Dateslot {
+    option (chaku.to_flat) = true;
+
+    google.protobuf.Timestamp startTime = 1;
+    google.protobuf.Timestamp endTime = 2;
+}
+
+// Event Object
+message Event {
+    option (chaku.to_flat) = true;
+
+    string id = 1;
+    google.protobuf.Any payload = 2;
+}
+
+message Address {
+    option (chaku.to_flat) = true;
+
+    // Country , e.g. "USA". (required)
+    string country = 1;
+    // Locality or locality/city, e.g. "Mountain View". (required)
+    string locality = 2;
+    // Region, The region/state/province, e.g. "CA". This field is only required
+    // in
+    // countries where region is commonly a part of the address. (optional)
+    string region = 3;
+    // PostalCode  e.g. "94043". (required)
+    string postal_code = 4;
+    // StreetAddress, e.g. "1600 Amphitheatre Pkwy". (required)
+    string street_address = 5;
+    // GeoCoordinates , e.g. latitude=23.2599333, longitude=77.41261499999996
+    //Latitude e.g. 23.2599333
+    double latitude = 6;
+    //Longitude e.g. 77.41261499999996
+    double longitude = 7;
+}
+
+message GeoCoordinate {
+    option (chaku.to_flat) = true;
+
+    //Latitude e.g. 23.2599333
+    double latitude = 6;
+    //Longitude e.g. 77.41261499999996
+    double longitude = 7;
+}
+
+// for chaku always tag json
+message Gallery {
+    option (chaku.to_flat) = true;
+
+    repeated GalleryItem images = 1;
+    GalleryItem default = 2;
+}
+
+enum Gender {
+    UNSPECIFIED = 0;
+    FEMALE = 1;
+    MALE = 2;
+}
+
+// Represents a day of week.
+enum DayOfWeek {
+    // The unspecified day-of-week.
+    DAY_OF_WEEK_UNSPECIFIED = 0;
+
+    // The day-of-week of Monday.
+    MONDAY = 1;
+
+    // The day-of-week of Tuesday.
+    TUESDAY = 2;
+
+    // The day-of-week of Wednesday.
+    WEDNESDAY = 3;
+
+    // The day-of-week of Thursday.
+    THURSDAY = 4;
+
+    // The day-of-week of Friday.
+    FRIDAY = 5;
+
+    // The day-of-week of Saturday.
+    SATURDAY = 6;
+
+    // The day-of-week of Sunday.
+    SUNDAY = 7;
+}
+
+message PageInfo {
+    option (chaku.to_flat) = true;
+
+    // HasNext is used to indicate whether more edges exist following the set
+    // defined by the clients arguments. If the client is paginating with
+    // first/after, then the server must return true if further edges exist,
+    // otherwise false. If the client is paginating with last/before, then the
+    // client may return true if edges further from before exist, if it can do so
+    // efficiently, otherwise may return false.
+    bool has_next = 1;
+
+    // HasPrevious is used to indicate whether more edges exist prior to the set
+    // defined by the clients arguments.
+    // If the client is paginating with last/before, then the server must return
+    // true if prior edges exist, otherwise false. If the client is paginating
+    // with first/after, then the client may return true if edges prior to after
+    // exist, if it can do so efficiently, otherwise may return false.
+    bool has_previous = 2;
+
+    string start_cursor = 3;
+    string end_cursor = 4;
+}
+
+//Protobuf represesnts any serialized protocol buffer message
+message Protobuf{
+    option (chaku.to_flat) = true;
+
+    //TypeUrl specifies the path of the protocol buffer message
+    string type_url = 1;
+    //Data is valid serialized protocol buffer message
+    bytes data = 2;
+}
+
+//PaymentMethod defines the all the type of mode of payment supported by appointy
+enum PaymentMethod{
+    UNSPECIFIED_PAYMENT_METHOD = 0;
+    CASH = 1;
+    STRIPE_CARD = 2;
+    SQUARE_CARD = 3;
+    PACKAGE = 4;
+    GIFT_CERTIFICATE = 5;
+    MEMBERSHIP = 6;
+    DISCOUNT_CODE = 7;
+}

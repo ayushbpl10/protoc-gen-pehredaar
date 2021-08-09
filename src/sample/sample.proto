@@ -1,0 +1,270 @@
+syntax = "proto3";
+
+package appointy.sample.v1;
+
+option go_package = "pb";
+
+import "google/protobuf/empty.proto";
+import "pehredaar/pehredaar.proto";
+
+service RightsSamples {
+
+    rpc SinglePrimitive (SinglePrimitiveReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "id"
+        };
+    }
+
+    rpc NestedObject (NestedObjectReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "object.id"
+        };
+    }
+
+    rpc NestedObjects (NestedObjectsReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "object.string.id"
+        };
+    }
+
+    rpc OneOfPrimitive (OneOfPrimitiveReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "id1"
+            resource: "id2"
+        };
+    }
+
+    rpc OneOfObject (OneOfObjectReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "object1.id"
+            resource: "object2.ids"
+        };
+    }
+
+    rpc OneOfPrimitiveAndObject (OneOfPrimitiveAndObjectReq) returns (.google.protobuf.Empty){
+        option (pehredaar.paths) = {
+            resource: "object1.id"
+            resource: "object2.ids"
+        };
+    }
+
+    rpc NestedObjectPrimitive (NestedObjectPrimitiveReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource: "object.string_array.ids"
+        };
+    }
+
+    rpc NestedObjectRepeated (NestedObjectRepeatedReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource: "object.object_array.ids"
+        };
+    }
+
+    rpc AttributeBasedRight (AttributeBasedRightReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource: "id"
+        };
+    }
+
+    rpc StaticRights (StaticRightsReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource_static: "StaticValue"
+        };
+    }
+
+    rpc DefaultStaticRights (StaticRightsReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource_static_default: true
+        };
+    }
+
+    rpc BugInRpcNameHavingid (StaticRightsReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource: "id"
+        };
+    }
+
+    rpc OnlyAttributeBasedRight (OnlyAttributeBasedRightReq) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            only_attribute_based: true
+        };
+    }
+
+    rpc AllowParentRight (Primitive) returns (.google.protobuf.Empty) {
+        option (pehredaar.paths) = {
+            resource: "id"
+            allow_parent: true
+        };
+    }
+
+}
+
+//service RightsModuleRoleServiceSample {
+//    rpc ListRightsModuleRoleServiceSampleRPC1 (SinglePrimitiveReq) returns (.google.protobuf.Empty) {
+//        option (pehredaar.paths) = {
+//            resource: "id"
+//        };
+//    }
+//
+//    rpc AddRightsModuleRoleServiceSampleRPC2 (NestedObjectReq) returns (.google.protobuf.Empty) {
+//        option (pehredaar.paths) = {
+//            resource: "object.id"
+//        };
+//    }
+//}
+
+message SinglePrimitiveReq {
+    string id = 1;
+}
+
+message NestedObjectReq {
+    Primitive object = 1;
+}
+
+message NestedObjectsReq {
+    Object object = 1;
+}
+
+message OneOfPrimitiveReq {
+    oneof data {
+        string id1 = 1;
+        string id2 = 2;
+    }
+}
+
+message OneOfObjectReq {
+    oneof data {
+        Primitive object1 = 1;
+        Primitive object2 = 2;
+    }
+}
+
+message OneOfPrimitiveAndObjectReq {
+    oneof data {
+        Primitive object1 = 1;
+        StringArray object2 = 2;
+    }
+}
+
+message NestedObjectPrimitiveReq {
+    ObjectWithArray object = 1;
+}
+
+message NestedObjectRepeatedReq {
+    repeated ObjectArray object = 1;
+}
+
+// Dummy Messages
+message Primitive {
+    string id = 1;
+}
+
+message Object {
+    Primitive string = 1;
+}
+
+message StringArray {
+    repeated string ids = 1;
+}
+
+message ObjectWithArray {
+    StringArray string_array = 1;
+}
+
+message ObjectArray {
+    repeated StringArray object_array = 1;
+}
+
+message AttributeBasedRightReq {
+    string id = 1;
+    bool skip_input_validation = 2 [(pehredaar.attribute).skip = true];
+    bool input_validation_skip = 3 [(pehredaar.attribute).skip = true];
+}
+
+message StaticRightsReq {
+    string id = 1;
+}
+
+message OnlyAttributeBasedRightReq {
+    bool attr_obj1 = 1 [(pehredaar.attribute).skip = true];
+    NestedObjectOnlyAttributeBasedRightReq1 obj1 = 2;
+}
+
+message NestedObjectOnlyAttributeBasedRightReq1 {
+    bool attr_obj2 = 1 [(pehredaar.attribute).skip = true];
+    NestedObjectOnlyAttributeBasedRightReq2 obj2 = 2;
+}
+
+message NestedObjectOnlyAttributeBasedRightReq2 {
+    bool attr_obj3 = 1 [(pehredaar.attribute).skip = true];
+}
+
+//option (pehredaar.module_roles).module_role = {
+//    module_role_name: "RPC and Pattern Test case Editor"
+//    display_name: "Editor"
+//    rpc: "SinglePrimitive"
+//    rpc: "NestedObject"
+//    rpc: "NestedObjects"
+//    rpc: "OneOfPrimitive"
+//    rpc: "OneOfObject"
+//    rpc: "OneOfPrimitiveAndObject"
+//    rpc: "NestedObjectPrimitive"
+//    rpc: "NestedObjectRepeated"
+//    pattern: "{parent}/.BatchCheckAvailability"
+//    pattern : "skip_input_validation.AttributeBasedRight"
+//    pattern : "input_validation_skip.AttributeBasedRight"
+//    pattern : "obj_1.obj_2.attr_obj3.OnlyAttributeBasedRight"
+//    pattern : "obj_1.attr_obj2.OnlyAttributeBasedRight"
+//    pattern : "attr_obj1.OnlyAttributeBasedRight"
+//    pattern: "StaticValue/.StaticRights"
+//    rpc: "DefaultStaticRights"
+//    priority: 10
+//    service_name: "RightsSamples"
+//};
+//
+//option (pehredaar.module_roles).module_role = {
+//   module_role_name: "Failed Validation RPC Test Case"
+//   display_name: "Failed Validation RPC Test Case"
+//   rpc: "RPC Not Present"
+//   service_name: "RightsSamples"
+//};
+//
+//option (pehredaar.module_roles).module_role = {
+//    module_role_name: "Admin"
+//    display_name: "Admin"
+//    pattern: "{parent}**/.*"
+//    service_name: "RightsSamples"
+//};
+//
+//option (pehredaar.module_roles).module_role = {
+//    module_role_name: "Skip Service Name Test Case Group Admin"
+//    display_name: "Group Admin"
+//    pattern: "{parent}**/.*"
+//    skip_service_name: true
+//    service_name: "RightsSamples"
+//};
+//
+//
+//option (pehredaar.module_roles).module_role = {
+//    module_role_name: "Admin"
+//    display_name: "Admin"
+//    service_name: "RightsModuleRoleServiceSample"
+//    rpc: "AddRightsModuleRoleServiceSampleRPC2"
+//    description: "werf"
+//    app_name: "dwe"
+//    external: true
+//};
+//
+//option (pehredaar.module_roles).module_role = {
+//    module_role_name: "Viewer"
+//    display_name: "Viewer"
+//    service_name: "RightsModuleRoleServiceSample"
+//    rpc: "ListRightsModuleRoleServiceSampleRPC1"
+//};
+
+option (pehredaar.module_roles).module_role = {
+    module_role_name: "UserLevel"
+    display_name: "User Module Role"
+    pattern: "*{user_id}*"
+    skip_service_name: true
+};

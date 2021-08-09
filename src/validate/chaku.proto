@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package chaku;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "go.saastack.io/chaku/validate";
+
+// Chaku constraints applied at the field level
+extend google.protobuf.FieldOptions {
+    FieldConstraints constraints = 99999;
+}
+
+// Chaku constraints applied at the message level
+extend google.protobuf.MessageOptions {
+    // root is the most important option, in the complete proto file. It
+    // is used to describe the main root message in the tree structure of
+    // the proto file, (tree structure describes the working flow and the
+    // dependency structure in the proto file). At least one root message
+    // is required in file, that is not specified as descriptor type, to
+    // describe the root tree structure, for which operations are required.
+    bool root = 99999;
+
+    // prefix is a required option in all messages, it is used as prefix
+    // in the generated UUID of the message. If not specified in message
+    // the first three character of the message name is taken as prefix.
+    string prefix = 100000;
+
+    // to_flat is used to set a message as a flat object, which will be
+    // flatten where-ever it is used, into its parent object.
+    // A root object cannot be a flat object
+    bool to_flat = 99998;
+}
+
+// Chaku constraints applied at the file level
+extend google.protobuf.FileOptions {
+    // descriptors is an optional file-option that specifies whether the
+    // proto file is a descriptor type or not. A descriptor type proto
+    // file is the one that only describes the messages for external use.
+    // So, no CRUD operations are required for them, and hence, specifying
+    // the root is useless in such files.
+    bool descriptors = 99998;
+
+    // collection is also the optional file-option. It specifies the custom
+    // name of the database schema or cluster.
+    string collection = 99999;
+}
+
+// FieldConstraints encapsulates all the constraints that can be applied
+// to a field in the message. Some of the constraints are enforced based
+// on the type of the field and
+message FieldConstraints {
+    // json specifies that the field is required to be stored as a 'json'
+    // object in the database, directly without any alteration.
+    // A map type or an oneof type field are by default marked as `json`.
+    bool json = 1;
+
+    // pk specifies that the field is required to be the primary key in
+    // the database, along with the 'id'. By default, if no field is
+    // marked as pk, the 'id' field is marked as primary key.
+    // pk can be tagged on primitive type fields only. An object type or
+    // a repeated type or a map type or an oneof type cannot be tagged as
+    // the pk field.
+    bool pk = 2;
+
+    // nullable specifies that whether the field can be null in object.
+    bool nullable = 3;
+
+    // unique specifies that the field is required to be marked as the
+    // unique field in the database, as a unique constraint.
+    // unique can be tagged on primitive type fields only. An object type
+    // or a repeated type or a map type or an oneof type cannot be tagged
+    // as the unique field.
+    bool unique = 4;
+}

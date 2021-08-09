@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package pehredaar;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package="pehredaar";
+
+extend google.protobuf.MethodOptions {
+    MyRights paths = 9955;
+}
+
+extend google.protobuf.ServiceOptions {
+    ServicePattern pattern = 9696;
+}
+
+extend google.protobuf.FieldOptions {
+    Attribute attribute = 9956;
+}
+
+message Attribute {
+    bool skip = 1;
+}
+
+message MyRights {
+    repeated string resource = 1;
+    repeated string resource_and = 2;
+    repeated string resource_static = 3;
+    bool resource_static_default = 4;
+    bool only_attribute_based = 5;
+    bool allow_parent = 6;
+    bool allow_staff = 7;
+}
+
+message ServicePattern {
+    string pattern = 1;
+}
+
+message ModuleRole {
+    string module_role_name = 1;
+    string display_name = 2;
+    repeated string pattern = 3;
+    string service_name = 4; // only if multiple services
+    bool skip_service_name = 5; // to skip adding of service name in front of patterns (only valid for pattern not rpc)
+    repeated string rpc = 6; // to add the patterns of rpc mentioned (exact name of rpc required)
+    bool grouping_allowed = 7;
+    int32 priority = 8;
+    string description = 9;
+    bool external = 10;
+    string app_name = 11;
+}
+
+message ModuleRoles {
+    repeated ModuleRole module_role = 1;
+}
+
+extend google.protobuf.FileOptions {
+    ModuleRoles module_roles = 9779;
+}
+
+
+
+// !!! IMPORTANT !!!
+//
+// Any change done in proto should also be done in deployment/protos as we build proto from there and not import from here
+//
+//

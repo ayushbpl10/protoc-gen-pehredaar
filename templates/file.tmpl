@@ -3,139 +3,333 @@
 
 package {{ .PackageName }}
 
+import (
 {{ range .Imports }}
-import "{{ .}}"
-{{ end }}
+	"{{ .}}"{{ end }}
+    "context"
+	"fmt"
+	"go.uber.org/fx"
+	"go.saastack.io/userinfo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	rightspb "go.saastack.io/right/pb"
+	rights "go.saastack.io/deployment/right"
+	"database/sql"
+	modulePB "go.saastack.io/modulerole/pb"
+)
 
+{{ $moduleRoles := .ModuleRoles}}
 
 {{range $serviceIn := .Services}}
-    var {{$serviceIn.ServiceName}}ResourcePaths = [...]string{
+
+	const(
+
+		{{range $rpcIn := $serviceIn.Rpcs}}
+            {{range $resource := $rpcIn.Resources}}
+                {{if $resource.Constant }}
+					{{ $resource.Constant }} = "{{ $resource.ConstantValue }}"
+                {{end}}
+            {{end}}
+        {{end}}
+	)
+
+	var {{$serviceIn.ServiceName}}ModuleName = "{{$serviceIn.ServiceName}}"
+	var {{$serviceIn.ServiceName}}ModulePattern = "/{{$serviceIn.ServiceName}}/{parent}**/.*"
+
+	{{range $rpcIn := $serviceIn.Rpcs}}
+		{{if $rpcIn.StaticRight}}
+			var {{$serviceIn.ServiceName}}{{$rpcIn.RPCName}}StaticRight = "{{$rpcIn.StaticRight}}"
+		{{end}}
+	{{end}}
+
+    var {{$serviceIn.ServiceName}}ResourcePaths = []*rightspb.RightsResource{
     {{range $rpcIn := $serviceIn.Rpcs}}
         {{range $resource := $rpcIn.Resources}}
-            "{{$resource.ResourceStringWithCurlyBraces}}",
+              {{if $resource.ResourceStringWithCurlyBraces }}
+				{
+					Name: `{{$resource.ResourceName}}`,
+					Description: `{{$resource.ResourceComment}}`,
+					Resource: `{{$resource.ResourceStringWithCurlyBraces}}`,
+				},
+              {{end}}
+              {{if eq $resource.ResourceStringWithCurlyBraces "" }}
+                {
+                    Name: `{{$resource.ResourceName}}`,
+                    Description: `{{$resource.ResourceComment}}`,
+                    Resource: `{{$resource.ResourceStringWithFormatter}}`,
+                },
+              {{end}}
         {{end}}
+        {{range $validator := $rpcIn.Validators}}
+				{
+					Name: `{{$validator.Name}}`,
+					Description: `{{$validator.Description}}`,
+					Resource: `{{$validator.Resource}}`,
+				},
+		{{end}}
     {{end}}
     }
 {{end}}
 
+{{/*
+{{range $serviceIn := .Services}}
+    {{if eq $serviceIn.HasValidation true}}
+    type {{$serviceIn.ServiceName}}Validator interface {
+        {{range $rpcIn := $serviceIn.Rpcs}}
+            {{range $validator := $rpcIn.Validators}}
+					{{$rpcIn.RPCName}}{{$validator.ValidatorName}}Validator(context.Context,*{{$rpcIn.Input}}) error
+            {{end}}
+        {{end}}
+    }
+    {{end}}
+{{end}}
+*/}}
+
 {{ range $service := .Services }}
 
+    type rights{{$service.ServiceName}}Server struct {
 
+        {{/*
+             {{if eq $service.HasValidation true}}
+                         {{$service.ServiceName}}Validator
+             {{end}}
+        */}}
 
-    type Rights{{$service.ServiceName}}Server struct {
-        {{$service.ServiceName}}Server
-        rightsCli rights.RightValidatorsClient
-        user      user.UserIDer
+        {{$service.ServiceName}}Srv {{$service.ServiceName}}Server
+        moduleRoleServer     {{if ne $service.ServiceName "ModuleRoleService"}}modulePB.{{end}}ModuleRoleServiceServer
+        rightsCli rightspb.RightValidatorsClient
+        db *sql.DB
     }
 
-    func init() {
-        pehredaar.Options = append(pehredaar.Options, fx.Provide(NewRights{{$service.ServiceName}}Client))
-    }
-
-    type Rights{{$service.ServiceName}}ClientResult struct {
-        fx.Out
-        {{$service.ServiceName}}Client {{$service.ServiceName}}Client `name:"r"`
-    }
-
-    func NewRights{{$service.ServiceName}}Client(c rights.RightValidatorsClient, s {{$service.ServiceName}}Server,u user.UserIDer) Rights{{$service.ServiceName}}ClientResult {
-        return Rights{{$service.ServiceName}}ClientResult{ {{$service.ServiceName}}Client: NewLocal{{$service.ServiceName}}Client(NewRights{{$service.ServiceName}}Server(c, s, u))}
-    }
-    func NewRights{{$service.ServiceName}}Server(c rights.RightValidatorsClient, s {{$service.ServiceName}}Server, u user.UserIDer) {{$service.ServiceName}}Server {
-        return &Rights{{$service.ServiceName}}Server{
-            s,
-            c,
-            u,
+    func NewRights{{$service.ServiceName}}Server(db *sql.DB,
+        mrs {{if ne $service.ServiceName "ModuleRoleService"}}modulePB.{{end}}ModuleRoleServiceServer,
+        c rightspb.RightValidatorsClient,
+        {{/* {{if eq $service.HasValidation true}} val {{$service.ServiceName}}Validator, {{end}} */}}
+        config rights.ModuleRoleConfig,
+        in struct {
+			fx.In
+			S {{$service.ServiceName}}Server `name:"public"`
+		},
+    ) struct{
+      	fx.Out
+      	S {{$service.ServiceName}}Server `name:"public"`
+  	} {
+        srv := &rights{{$service.ServiceName}}Server{
+            db: db,
+            rightsCli: c,
+            {{$service.ServiceName}}Srv: in.S,
+            moduleRoleServer:     mrs,
+            {{/* {{if eq $service.HasValidation true}} val ,{{end}} */}}
         }
+
+        if err :=  srv.RegisterModuleRoles(); err != nil {
+            panic(err)
+        }
+
+        return struct{
+			fx.Out
+			S {{$service.ServiceName}}Server `name:"public"`
+		}{
+			S: srv,
+		}
     }
 
     {{ range $rpc := $service.Rpcs }}
-        func (s *Rights{{$service.ServiceName}}Server) {{$rpc.RPCName}}(ctx context.Context, rightsvar *{{$rpc.Input}}) ({{if eq $rpc.Output "Empty"}}*empty.{{$rpc.Output}}{{else}}*{{$rpc.Output}}{{end}}, error) {
+        func (s *rights{{$service.ServiceName}}Server) {{$rpc.RPCName}}(ctx context.Context, rightsvar {{if eq $rpc.Input "Empty"}}*empty.{{$rpc.Input}}{{else}}*{{$rpc.Input}}{{end}}) ({{if eq $rpc.Output "Empty"}}*empty.{{$rpc.Output}}{{else}}*{{$rpc.Output}}{{end}}, error) {
 
             {{ if eq $rpc.Missing false}}
 
-            ResourcePathOR := make([]string,0)
-            ResourcePathAND := make([]string,0)
+				ResourcePathOR := make([]string,0)
+				ResourcePathAND := make([]string,0)
 
-            {{range $resource := $rpc.Resources}}
+				{{range $resource := $rpc.Resources}}
 
-                 {{if $resource.IsRepeated}}
+					 {{if $resource.IsRepeated}}
 
-                        {{ range $i,$forloop := $resource.ForLoop}}
+							{{ range $i,$forloop := $resource.Loops}}
 
-                            for _, {{$forloop.ValueKey}} := range {{if eq $i 0}}rightsvar.{{end}}{{$forloop.RangeKey}}() {
+								for _, {{$forloop.ValueKey}} := range {{if eq $i 0}}rightsvar.{{end}}{{$forloop.RangeKey}}() {
 
-                        {{ end }}
+							{{ end }}
 
-                        ResourcePathAND = append(ResourcePathAND,
+							ResourcePathAND = append(ResourcePathAND,
 
-                                                            fmt.Sprintf("{{$resource.ResourceStringWithFormatter}}",
+																fmt.Sprintf("{{$resource.ResourceStringWithFormatter}}",
 
-                                                            {{ range $resource.GetStrings}}
-
-
-                                                                {{range $getStrKey,$notincluderightsvar :=  .}}
-
-                                                                    {{if eq $notincluderightsvar false}}rightsvar.{{end}}{{$getStrKey}},
-
-                                                                {{end}}
-
-                                                            {{end}} ),
-
-                                                         )
-                        {{ range $forloop := $resource.ForLoop}}
-
-                            }
-                        {{ end }}
+																{{ range $resource.GetStrings}}
 
 
-                  {{ end }}
+																	{{range $getStrKey,$notincluderightsvar :=  .}}
 
-             {{ end }}
+																		{{if eq $notincluderightsvar false}}rightsvar.{{end}}{{$getStrKey}},
 
-            ResourcePathOR = append(ResourcePathOR,
+																	{{end}}
 
-            {{range $resource := $rpc.Resources}}
+																{{end}} ),
 
-                {{if eq $resource.IsRepeated false}}
+															 )
+							{{ range $forloop := $resource.Loops}}
 
-                    fmt.Sprintf("{{$resource.ResourceStringWithFormatter}}",
-                        {{ range $resource.GetStrings}}
+								}
+							{{ end }}
 
-                            {{range $getStrKey,$notincluderightsvar :=  .}}
 
-                                {{if eq $notincluderightsvar false}}rightsvar.{{end}}{{$getStrKey}},
+					  {{ end }}
 
-                            {{end}}
+				 {{ end }}
 
-                        {{end}} ),
+
+				{{range $resource := $rpc.Resources}}
+
+                	{{if eq $resource.IsRepeated false}}
+
+                		{{if  eq $resource.IsOneOf true}}
+
+						if _, ok := rightsvar.{{$resource.OneOfInput}}.(*{{$resource.OneOfName}}_{{$resource.OneOfField}}); ok {
+
+                		{{end}}
+
+                		{{ if eq $resource.And true }}
+
+							ResourcePathAND = append(ResourcePathAND,
+
+						{{ else }}
+
+							ResourcePathOR = append(ResourcePathOR,
+
+						{{ end }}
+
+						fmt.Sprintf("{{$resource.ResourceStringWithFormatter}}",
+							{{ range $resource.GetStrings}}
+
+								{{range $getStrKey,$notincluderightsvar :=  .}}
+
+									{{if eq $notincluderightsvar false}}rightsvar.{{end}}{{$getStrKey}},
+
+								{{end}}
+
+							{{end}} ),
+
+						)
+
+						{{if  eq $resource.IsOneOf true}}
+                        }
+                        {{end}}
+
+					{{end}}
+
+				{{end}}
+
+				validations := map[string]bool{}
+
+                {{if  eq $rpc.OnlyAttributeBased true}}
+
+                    check := false
+
+                    {{range $validator := $rpc.Validators}}
+                        check = check || {{$validator.ValidatorName}}
+                    {{end}}
 
                 {{end}}
 
+				{{range $validator := $rpc.Validators}}
+					if {{$validator.ValidatorName}} == true {
+						validations["{{$validator.Resource}}"] = true
+					}
+				{{end}}
+
+                {{if  eq $rpc.OnlyAttributeBased true}}
+
+                    if check {
+
+                {{end}}
+                        res, err := s.rightsCli.IsValid(ctx, &rightspb.IsValidRequest{
+                            ResourcePathOr  	 :  ResourcePathOR,
+                            ResourcePathAnd 	 :  ResourcePathAND,
+                            UserId          	 :  userinfo.FromContext(ctx).Id,
+                            ModuleName      	 :  "{{$service.ServiceName}}",
+                            AttributeValidations :  validations,
+                            AllowParent          :  {{$rpc.AllowParent}},
+                            AllowStaff           :  {{$rpc.AllowStaff}},
+                        })
+                        if err != nil {
+                            return nil, err
+                        }
+
+                        if !res.IsValid {
+                            return nil, status.Errorf(codes.PermissionDenied, res.Reason)
+                        }
+
+                {{if  eq $rpc.OnlyAttributeBased true}}
+
+                    }
+
+                {{end}}
+
+                {{/*
+				{{range $validator := $rpc.Validators}}
+					if rightsvar.Get{{$validator.ValidatorName}}() == false {
+						if errVal := s.{{$service.ServiceName}}Validator.{{$rpc.RPCName}}{{$validator.ValidatorName}}Validator(ctx, rightsvar); err != nil {
+							return nil, status.Errorf(codes.PermissionDenied, err.Error())
+						}
+					}
+				{{end}}
+
+				for k, v := range res.SkipAttributeValidations {
+
+					if v == false {
+
+						switch k {
+						{{range $validator := $rpc.Validators}}
+
+							case "{{$validator.Resource}}":
+
+								if errVal := s.{{$service.ServiceName}}Validator.{{$rpc.RPCName}}{{$validator.ValidatorName}}Validator(ctx, rightsvar); err != nil {
+									return nil, status.Errorf(codes.PermissionDenied, err.Error())
+								}
+						{{end}}
+
+						}
+					}
+				}
+
+				*/}}
+
             {{end}}
 
-            )
-
-            res, err := s.rightsCli.IsValid(ctx, &rights.IsValidReq{
-                ResourcePathOr  :  ResourcePathOR,
-                ResourcePathAnd :  ResourcePathAND,
-                UserId          :  s.user.UserID(ctx),
-                ModuleName      :  "{{$service.ServiceName}}",
-            })
-            if err != nil {
-                return nil, err
-            }
-
-
-            if !res.IsValid {
-                return nil, status.Errorf(codes.PermissionDenied, res.Reason)
-            }
-
-            {{end}}
-
-            return s.{{$service.ServiceName}}Server.{{.RPCName}}(ctx, rightsvar)
+            return s.{{$service.ServiceName}}Srv.{{.RPCName}}(ctx, rightsvar)
         }
 
     {{end}}
+
+    // function for constructor
+    func (s *rights{{$service.ServiceName}}Server) RegisterModuleRoles() error {
+
+        if _, err := s.moduleRoleServer.RegisterModuleRoleInMemory(context.Background(), &{{if ne $service.ServiceName "ModuleRoleService"}}modulePB.{{end}}ModuleRoleList{
+            List: []*{{if ne $service.ServiceName "ModuleRoleService"}}modulePB.{{end}}ModuleRole{ {{range $moduleRole := $moduleRoles }}
+                {{if or (eq $moduleRole.ServiceName $service.ServiceName) ($moduleRole.SkipServiceName) }}
+                {
+                    Name:        "{{$moduleRole.Name}}",
+                    Pattern:     []string{ {{range $pattern := $moduleRole.Patterns}}
+                        "{{$pattern}}", {{end}}
+				    },
+                    DisplayName: "{{$moduleRole.DisplayName}}",
+                    IsDefault:   true,
+					UniqueForModule:      {{$moduleRole.UniqueForModule}},
+					Priority:             {{$moduleRole.Priority}},
+					ServiceName:          "{{$moduleRole.ServiceName}}",
+					Description:		  "{{$moduleRole.Description}}",
+                   	External: 			  {{$moduleRole.External}},
+                    AppName:			  "{{$moduleRole.Description}}",
+                }, {{end}} {{end}}
+            },
+        }); err != nil {
+            return err
+        }
+
+		return nil
+    }
+
 {{ end }}
 
 {{end}}

@@ -1,18 +1,17 @@
-# protoc-gen-pehredaar
-
-Generates code for rights from proto messages for rights implememntation .
-
-protoc -I /usr/local/include -I ./  --go_out=plugins=grpc:./  ./src/rights/rights.proto
-
-protoc -I /usr/local/include -I ./  --go_out=plugins=grpc:./  ./src/pehredaar/pehredaar.proto
-
-protoc -I /usr/local/include -I ./ -I ./src --go_out=plugins=grpc:./  ./src/example/example.proto
-
-packr && go build && protoc -I /usr/local/include -I  ./ -I ./src --plugin=protoc-gen-pehredaar=protoc-gen-pehredaar  --pehredaar_out=:./  ./src/example/example.proto && goimports -w ./src
-
 # protoc-gen-pehredaar - Build a Rights Module to secure the API/GraphQL endpoints
 
 protoc-gen-pehredaar is a protoc plugin which is used to generate pehredaar middleware for securing endpoints. This middleware uses a glob notation to build specific rights pattern for each module.
+
+# Motivation
+
+In the previous projects , we needed to give role based access for each endpoint.
+This required a lot of effort as in each and every endpoint we needed to add an if condition for a specific role.
+This was a difficult and error prone task.
+
+protoc-gen-peghredaar is developed with the sole purpose of solving the issue of writing these access based conditions
+in each endpoint. 
+
+It is built using protoc and understands the langulage of protocol buffers to generate the rights validation code.
 
 # Getting Started
 
@@ -308,13 +307,15 @@ option (pehredaar.module_roles).module_role = {
 
 protoc-gen-pehredaar uses the options provided in the rpc to identify which input message property is dynamic and needs to be considered while glob pattern matching from input.
 
+A sample proto can be referenced in sample.proto file.
+
 
 # Installing
 
 The installation of protoc-gen-pehredaar can be done directly by running go get.
 
 ```
-go get go.saastack.io/pehredaar
+go get github.com/ayushbpl10/protoc-gen-pehredaar
 ```
 
 # Usage

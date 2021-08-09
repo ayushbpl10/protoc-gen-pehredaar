@@ -1,0 +1,18 @@
+packr
+
+go build -o protoc-gen-pehredaar
+
+# protoc -I ./ --go_out=:./ ./pehredaar/pehredaar.proto
+
+protoc -I ./ --pehredaar_out=:./ ./src/example/example.proto
+
+# packr && go build -o protoc-gen-pehredaar && mv ./protoc-gen-pehredaar ~/go/bin
+# protoc -I ./ --pehredaar_out=:. ./src/service_provider/service_provider.proto -I ./src
+
+# relative command
+# packr && go build -o protoc-gen-pehredaar && mv ./protoc-gen-pehredaar ~/go/bin && protoc -I ./src -I ./ --go_out=:. --pehredaar_out=:. ./src/sample/sample.proto
+
+# with $GOPATH command
+# packr && go build -o protoc-gen-pehredaar && mv ./protoc-gen-pehredaar $GOPATH/bin && protoc -I ./src -I ./ --go_out=:. --pehredaar_out=:. ./src/sample/sample.proto
+
+# protoc -I . -I ./src --debug_out=".:." ./src/sample/sample.proto
