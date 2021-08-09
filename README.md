@@ -426,4 +426,4 @@ The behaviour of protoc-gen-pehredaar can be modified using the following option
 
 # Authors:
 
-* Ayush Gupta (ayush@appointy.com)
+* Ayush Gupta 
