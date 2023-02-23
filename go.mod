@@ -11,5 +11,5 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/lyft/protoc-gen-star v0.4.10
 	github.com/spf13/afero v1.2.2
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/text v0.3.8 // indirect
 )
